@@ -45,6 +45,20 @@ def permission_check():
                 return await command(ctx, *args, **kwargs)
 
             else:  # Unauthorized response
-                await ctx.send(messages.insufficient_rights.format(user=generate_mention(ctx.author.id)))
+                await ctx.send(fill_message("insufficient_rights", user=ctx.author.id))
         return wrapped
     return wrapper
+
+
+def fill_message(message_name, **kwargs):
+    if 'user' in kwargs:
+        kwargs['user'] = generate_mention(kwargs['user'])
+
+    if 'toaster' in kwargs:
+        kwargs['toaster'] = generate_mention(kwargs['toaster'])
+    
+    try:
+        template = getattr(messages, message_name)
+        template.format(**kwargs)
+    except Exception:
+        return ""
