@@ -23,15 +23,65 @@ arcas_time = (datetime.datetime.utcnow() -
 
 class FitWide(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self._bot = bot
+        self._guild = self._bot.get_guild(config.guild_id)
+
+        self.bit_names = ["0BIT", "1BIT", "2BIT", "3BIT", "4BIT+"]
+        self.mit_names = ["0MIT", "1MIT", "2MIT", "3MIT+"]
+        self.other_roles = ["Verify", "Host", "Bot", "Poradce", "Dropout"]
+        self.muni_role = ["MUNI"]
+
+        all_roles = self.bit_names + self.mit_names + self.other_roles + self.muni_role
+
+        self._roles = {role: self._get_role(role) for role in all_roles}
+
         self.verification = verification.Verification(bot, user_r)
+
+    def _get_role(self, name):
+        """Gets guild role for FitWide guild
+        :param name: {str} role name
+        :return: guild role data
+        """
+        return self._guild.get(self._guild.roles, name=name)
+    
+    def _get_channel(self, name):
+        """Gets guild channel for FitWide guild
+        :param name: {str} channel name
+        :return: channel data
+        """
+        return self._guild.get(self._guild.channels, name=name)
+    
+    @property
+    def _guild_members(self):
+        return self._guild.members
+
+    def _is_verified(self, member, exclude_muni=False):
+        """Check whether a guild member is verified
+        :param member: member to be checked
+        :param exclude_muni: {bool} also returns False if MUNI role is present
+        :return: {bool} False if unverified, True if verified
+        """
+        roles = member.roles
+
+        if self._roles["verify"] not in roles:
+            return False
+
+        unverified_roles = self.other_roles
+
+        if exclude_muni:
+            unverified_roles.extend(self.muni_role)
+
+        for role in self.other_roles:
+            if self._roles[role] in roles:
+                return False
+
+        return True
 
     async def is_admin(ctx):
         return ctx.author.id == config.admin_id
 
     async def is_in_modroom(ctx):
         return ctx.message.channel.id == config.mod_room
-
 
     @commands.Cog.listener()
     async def on_typing(self, channel, user, when):
@@ -49,36 +99,15 @@ class FitWide(commands.Cog):
     async def role_check(self, ctx, p_verified: bool = True,
                          p_move: bool = True, p_status: bool = True,
                          p_role: bool = True, p_muni: bool = True):
-        guild = self.bot.get_guild(config.guild_id)
-        members = guild.members
 
-        verify = discord.utils.get(guild.roles, name="Verify")
-        host = discord.utils.get(guild.roles, name="Host")
-        bot = discord.utils.get(guild.roles, name="Bot")
-        poradce = discord.utils.get(guild.roles, name="Poradce")
-        dropout = discord.utils.get(guild.roles, name="Dropout")
-        muni = discord.utils.get(guild.roles, name="MUNI")
-
-        verified = [member for member in members
-                    if verify in member.roles and
-                    host not in member.roles and
-                    bot not in member.roles and
-                    dropout not in member.roles and
-                    poradce not in member.roles]
-
-        if not p_muni:
-            verified = [member for member in verified
-                        if muni not in member.roles]
+        verified_members = [m for m in self._guild_members if self._is_verified(m, not p_muni)]
 
         permited = session.query(Permit)
         permited_ids = [int(person.discord_ID) for person in permited]
 
-        years = ["0BIT", "1BIT", "2BIT", "3BIT", "4BIT+",
-                 "0MIT", "1MIT", "2MIT", "3MIT+"]
+        year_roles = {key: value for key, value in self._roles if key in self.bit_names + self.mit_names}
 
-        year_roles = {year: discord.utils.get(guild.roles, name=year) for year in years}
-
-        for member in verified:
+        for member in verified_members:
             if member.id not in permited_ids:
                 if p_verified:
                     await ctx.send("Nenasel jsem v verified databazi: " +
@@ -99,7 +128,7 @@ class FitWide(commands.Cog):
 
                 year = self.verification.transform_year(person.year)
 
-                correct_role = discord.utils.get(guild.roles, name=year)
+                correct_role = self._roles[year]
 
                 if year is not None and correct_role not in member.roles:
                     if p_move:
@@ -118,7 +147,7 @@ class FitWide(commands.Cog):
                     if p_move:
                         for role_name, role in year_roles.items():
                             if role in member.roles:
-                                await member.add_roles(dropout)
+                                await member.add_roles(self._roles["dropout"])
                                 await member.remove_roles(role)
                                 await ctx.send("Presouvam: " + member.display_name +
                                                " z " + role_name + " do dropout")
@@ -136,17 +165,8 @@ class FitWide(commands.Cog):
     async def increment_roles(self, ctx):
         database.base.metadata.create_all(database.db)
 
-        guild = self.bot.get_guild(config.guild_id)
-
-        BIT_names = [str(x) + "BIT" + ("+" if x == 4 else "")
-                     for x in range(5)]
-        BIT = [discord.utils.get(guild.roles, name=role_name)
-               for role_name in BIT_names]
-
-        MIT_names = [str(x) + "MIT" + ("+" if x == 3 else "")
-                     for x in range(4)]
-        MIT = [discord.utils.get(guild.roles, name=role_name)
-               for role_name in MIT_names]
+        BIT = [self._get_role(role_name) for role_name in self.bit_names]
+        MIT = [self._get_role(role_name) for role_name in self.mit_names]
 
         # pridat kazdeho 3BIT a 2MIT cloveka do DB pred tim nez je jebnem do
         # 4BIT+ respektive 3MIT+ role kvuli rollbacku
@@ -169,26 +189,26 @@ class FitWide(commands.Cog):
         await BIT[2].edit(name="3BIT", color=BIT_colors[3])
         await BIT[1].edit(name="2BIT", color=BIT_colors[2])
         await BIT[0].edit(name="1BIT", color=BIT_colors[1])
-        bit0 = await guild.create_role(name='0BIT', color=BIT_colors[0])
+        bit0 = await self._guild.create_role(name='0BIT', color=BIT_colors[0])
         await bit0.edit(position=BIT[0].position - 1)
 
         MIT_colors = [role.color for role in MIT]
         await MIT[2].delete()
         await MIT[1].edit(name="2MIT", color=MIT_colors[2])
         await MIT[0].edit(name="1MIT", color=MIT_colors[1])
-        mit0 = await guild.create_role(name='0MIT', color=MIT_colors[0])
+        mit0 = await self._guild.create_role(name='0MIT', color=MIT_colors[0])
         await mit0.edit(position=MIT[0].position - 1)
 
         general_names = [str(x) + "bit-general" for x in range(4)]
         terminy_names = [str(x) + "bit-terminy" for x in range(1, 3)]
-        general_channels = [discord.utils.get(guild.channels,
-                                              name=channel_name)
+
+        general_channels = [self._get_channel(channel_name)
                             for channel_name in general_names]
-        terminy_channels = [discord.utils.get(guild.channels,
-                                              name=channel_name)
+
+        terminy_channels = [self._get_channel(channel_name)
                             for channel_name in terminy_names]
         # TODO: do smth about 4bit general next year, delete it in the meantime
-        bit4_general = discord.utils.get(guild.channels, name="4bit-general")
+        bit4_general = self._get_channel("4bit-general")
         if bit4_general is not None:
             await bit4_general.delete()
 
@@ -199,77 +219,61 @@ class FitWide(commands.Cog):
         await general_channels[0].edit(name="1bit-general")
         # create 0bit-general
         overwrites = {
-            guild.default_role:
-                discord.PermissionOverwrite(read_messages=False),
-            discord.utils.get(guild.roles, name="0BIT"):
-                discord.PermissionOverwrite(read_messages=True,
-                                            send_messages=True)
+            self._guild.default_role:
+                discord.PermissionOverwrite(read_messages=False), self._roles["0BIT"]:
+                discord.PermissionOverwrite(read_messages=True, send_messages=True)
         }
-        await guild.create_text_channel(
+        await self._guild.create_text_channel(
                 '0bit-general', overwrites=overwrites,
                 category=general_channels[0].category,
                 position=general_channels[0].position - 1
         )
 
         # delete 3bit-terminy
-        await discord.utils.get(guild.channels, name="3bit-terminy").delete()
+        await self._get_channel("3bit-terminy").delete()
 
         await terminy_channels[1].edit(name="3bit-terminy")
         await terminy_channels[0].edit(name="2bit-terminy")
         # create 1bit-terminy
         overwrites = {
-            guild.default_role:
-                discord.PermissionOverwrite(read_messages=False),
-            discord.utils.get(guild.roles, name="1BIT"):
-                discord.PermissionOverwrite(read_messages=True,
-                                            send_messages=False)
+            self._guild.default_role:
+                discord.PermissionOverwrite(read_messages=False), self._roles["1BIT"]:
+                discord.PermissionOverwrite(read_messages=True, send_messages=False)
         }
-        await guild.create_text_channel(
+        await self._guild.create_text_channel(
                 '1bit-terminy', overwrites=overwrites,
                 category=terminy_channels[0].category,
                 position=terminy_channels[0].position - 1
         )
 
         # give 4bit perms to the new 3bit terminy
-        await terminy_channels[1].set_permissions(
-            discord.utils.get(guild.roles, name="4BIT+"),
-            read_messages=True, send_messages=False
+        await terminy_channels[1].set_permissions(self._roles["4BIT+"],
+              read_messages=True, send_messages=False
         )
 
         # Give people the correct mandatory classes after increment
-        semester_names = [str(x) + ". Semestr" for x in range(1, 6)]
-        semester = [discord.utils.get(guild.categories, name=semester_name)
+        semester_names = ["{}. Semestr".format(x) for x in range(1, 6)]
+
+        semester = [discord.utils.get(self._guild.categories, name=semester_name)
                     for semester_name in semester_names]
-        await semester[0].set_permissions(discord.utils.get(guild.roles,
-                                                            name="1BIT"),
+
+        await semester[0].set_permissions(self._roles["1BIT"],
                                           read_messages=True,
                                           send_messages=True)
-        await semester[0].set_permissions(discord.utils.get(guild.roles,
-                                                            name="2BIT"),
-                                          overwrite=None)
-        await semester[1].set_permissions(discord.utils.get(guild.roles,
-                                                            name="1BIT"),
+        await semester[0].set_permissions(self._roles["2BIT"], overwrite=None)
+        await semester[1].set_permissions(self._roles["1BIT"],
                                           read_messages=True,
                                           send_messages=True)
-        await semester[1].set_permissions(discord.utils.get(guild.roles,
-                                                            name="2BIT"),
-                                          overwrite=None)
-        await semester[2].set_permissions(discord.utils.get(guild.roles,
-                                                            name="2BIT"),
+        await semester[1].set_permissions(self._roles["2BIT"], overwrite=None)
+        await semester[2].set_permissions(self._roles["2BIT"],
                                           read_messages=True,
                                           send_messages=True)
-        await semester[2].set_permissions(discord.utils.get(guild.roles,
-                                                            name="3BIT"),
-                                          overwrite=None)
-        await semester[3].set_permissions(discord.utils.get(guild.roles,
-                                                            name="2BIT"),
+        await semester[2].set_permissions(self._roles["3BIT"], overwrite=None)
+        await semester[3].set_permissions(self._roles["2BIT"],
                                           read_messages=True,
                                           send_messages=True)
-        await semester[3].set_permissions(discord.utils.get(guild.roles,
-                                                            name="3BIT"),
-                                          overwrite=None)
-        await semester[4].set_permissions(discord.utils.get(guild.roles,
-                                                            name="3BIT"),
+        await semester[3].set_permissions(self._roles["3BIT"], overwrite=None)
+        await semester[4].set_permissions(self._roles["3BIT"],
                                           read_messages=True,
                                           send_messages=True)
 

@@ -3,7 +3,7 @@ from discord import Member
 
 
 def generate_mention(user_id):
-    return '<@' + str(user_id) + '>'
+    return '<@{user_id}>'.format(user_id=user_id)
 
 
 def git_hash():
