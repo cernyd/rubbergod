@@ -119,60 +119,44 @@ async def on_error(event, *args, **kwargs):
         await channel.send("```\n" + output + "\n```")
 
 
+@utils.permission_check()
 @bot.command()
 async def pull(ctx):
-    if ctx.author.id == config.admin_id:
-        try:
-            utils.git_pull()
-            await ctx.send("Git pulled")
-        except:
-            await ctx.send("Git pull error")
-    else:
-        await ctx.send(
-            messages.insufficient_rights
-            .format(user=utils.generate_mention(ctx.author.id)))
+    try:
+        utils.git_pull()
+        await ctx.send("Git pulled")
+    except:
+        await ctx.send("Git pull error")
 
 
+@utils.permission_check()
 @bot.command()
 async def load(ctx, extension):
-    if ctx.author.id == config.admin_id:
-        try:
-            bot.load_extension(f'cogs.{extension}')
-            await ctx.send(f'{extension} loaded')
-        except:
-            await ctx.send("loading error")
-    else:
-        await ctx.send(
-            messages.insufficient_rights
-            .format(user=utils.generate_mention(ctx.author.id)))
+    try:
+        bot.load_extension(f'cogs.{extension}')
+        await ctx.send(f'{extension} loaded')
+    except:
+        await ctx.send("loading error")
 
 
+@utils.permission_check()
 @bot.command()
 async def unload(ctx, extension):
-    if ctx.author.id == config.admin_id:
-        try:
-            bot.unload_extension(f'cogs.{extension}')
-            await ctx.send(f'{extension} unloaded')
-        except:
-            await ctx.send("unloading error")
-    else:
-        await ctx.send(
-            messages.insufficient_rights
-            .format(user=utils.generate_mention(ctx.author.id)))
+    try:
+        bot.unload_extension(f'cogs.{extension}')
+        await ctx.send(f'{extension} unloaded')
+    except:
+        await ctx.send("unloading error")
 
 
+@utils.permission_check()
 @bot.command()
 async def reload(ctx, extension):
-    if ctx.author.id == config.admin_id:
-        try:
-            bot.reload_extension(f'cogs.{extension}')
-            await ctx.send(f'{extension} reloaded')
-        except:
-            await ctx.send("reloading error")
-    else:
-        await ctx.send(
-            messages.insufficient_rights
-            .format(user=utils.generate_mention(ctx.author.id)))
+    try:
+        bot.reload_extension(f'cogs.{extension}')
+        await ctx.send(f'{extension} reloaded')
+    except:
+        await ctx.send("reloading error")
 
 database.base.metadata.create_all(database.db)
 session.commit()  # Making sure

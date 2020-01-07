@@ -1,5 +1,6 @@
 import git
 from discord import Member
+from config import config, messages
 
 
 def generate_mention(user_id):
@@ -34,3 +35,16 @@ def has_role(user, role_name: str):
         return None
 
     return role_name.lower() in [x.name.lower() for x in user.roles]
+
+
+def permission_check():
+    def wrapper(command):
+        async def wrapped(ctx, *args, **kwargs):
+
+            if ctx.author.id == config.admin_id:
+                return await command(ctx, *args, **kwargs)
+
+            else:  # Unauthorized response
+                await ctx.send(messages.insufficient_rights.format(user=generate_mention(ctx.author.id)))
+        return wrapped
+    return wrapper

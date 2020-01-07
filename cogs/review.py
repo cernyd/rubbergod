@@ -100,25 +100,21 @@ class Review(commands.Cog):
         if isinstance(error, commands.BadArgument):
             await ctx.send(messages.review_add_format)
 
+    @utils.permission_check()
     @commands.cooldown(rate=5, per=20.0, type=commands.BucketType.user)
     @commands.command()
     async def subject(self, ctx, subcommand=None, subject=None):
-        if ctx.author.id == config.admin_id:
-            if not subcommand or not subject:
-                await ctx.send(messages.subject_format)
-                return
-            if subcommand == "add":
-                self.rev.add_subject(subject)
-                await ctx.send(f'Zkratka {subject} byla přidána')
-            elif subcommand == "remove":
-                self.rev.remove_subject(subject)
-                await ctx.send(f'Zkratka {subject} byla odebrána')
-            else:
-                await ctx.send(messages.review_wrong_subject)
+        if not subcommand or not subject:
+            await ctx.send(messages.subject_format)
+            return
+        if subcommand == "add":
+            self.rev.add_subject(subject)
+            await ctx.send(f'Zkratka {subject} byla přidána')
+        elif subcommand == "remove":
+            self.rev.remove_subject(subject)
+            await ctx.send(f'Zkratka {subject} byla odebrána')
         else:
-            await ctx.send(
-                messages.insufficient_rights
-                .format(user=utils.generate_mention(ctx.author.id)))
+            await ctx.send(messages.review_wrong_subject)
 
 
 def setup(bot):
