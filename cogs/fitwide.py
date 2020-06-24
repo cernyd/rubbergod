@@ -43,6 +43,39 @@ class FitWide(commands.Cog):
             await channel.send(embed=gif)
 
     @commands.cooldown(rate=2, per=20.0, type=commands.BucketType.user)
+    @commands.check(is_in_modroom)
+    @commands.command()
+    async def find_rolehoarders(self, ctx, limit=config.rolehoarder_default_limit):
+        guild = self.bot.get_guild(config.guild_id)
+        members = guild.members
+
+        found_members = []
+
+        for member in members:
+            role_count = 0
+            for role in member.roles:
+                if role.name.lower() in config.subjects:
+                    role_count += 1
+            if role_count > 0:
+                found_members.append((member, role_count))
+
+        msg = ""
+
+        if len(found_members) == 0:
+            msg = "Zadne jsem nenasel :slight_smile:"
+        else:
+            found_members.sort(key=lambda x: x[1], reverse=True)
+            for member, role_count in found_members[:limit]:
+                line = "{id} - {name} ({num} roli)\n".format(id=member.id, name=member.name, num=role_count)
+                if len(line) + len(msg) >= 2000:
+                    await ctx.send(msg)
+                    msg = line
+                else:
+                    msg += line
+
+        await ctx.send(msg)
+
+    @commands.cooldown(rate=2, per=20.0, type=commands.BucketType.user)
     @commands.check(is_admin)
     @commands.command()
     async def role_check(self, ctx, p_verified: bool = True,
@@ -62,7 +95,6 @@ class FitWide(commands.Cog):
                     if verify in member.roles and
                     host not in member.roles and
                     bot not in member.roles and
-                    dropout not in member.roles and
                     poradce not in member.roles]
 
         if not p_muni:
@@ -73,7 +105,7 @@ class FitWide(commands.Cog):
         permited_ids = [int(person.discord_ID) for person in permited]
 
         years = ["0BIT", "1BIT", "2BIT", "3BIT", "4BIT+",
-                 "0MIT", "1MIT", "2MIT", "3MIT+"]
+                 "0MIT", "1MIT", "2MIT", "3MIT+", "Dropout"]
 
         year_roles = {year: discord.utils.get(guild.roles, name=year) for year in years}
 
@@ -109,6 +141,10 @@ class FitWide(commands.Cog):
                                 await ctx.send("Presouvam: " + member.display_name +
                                                " z " + role_name + " do " + year)
                                 break
+                        else:
+                            await member.add_roles(dropout)
+                            await ctx.send("Presouvam: " + member.display_name +
+                                           " z " + role_name + " do dropout")
                     elif p_role:
                         await ctx.send("Nesedi mi role u: " +
                                        utils.generate_mention(member.id) +
@@ -122,6 +158,10 @@ class FitWide(commands.Cog):
                                 await ctx.send("Presouvam: " + member.display_name +
                                                " z " + role_name + " do dropout")
                                 break
+                        else:
+                            await member.add_roles(dropout)
+                            await ctx.send("Presouvam: " + member.display_name +
+                                           " z " + role_name + " do dropout")
                     elif p_role:
                         await ctx.send("Nesedi mi role u: " +
                                        utils.generate_mention(member.id) +

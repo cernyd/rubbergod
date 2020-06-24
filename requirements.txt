@@ -3,3 +3,6 @@ emoji
 gitpython
 sqlalchemy
 psycopg2
+requests
+pillow
+dhash

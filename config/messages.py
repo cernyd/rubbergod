@@ -36,10 +36,10 @@ class Messages:
 
     uhoh_counter = "{uhohs} uh ohs od spuštění."
     uptime_message = "Up since:  `{boottime}`\nUptime:\t`{uptime}`"
-    kachna_remaining = "Do kachny zbývá:  `{zbyva}`"
-    kachna_opened = "Kachna otevřená ! <:hypers:493154327318233088>"
-    kachna_temp_closed = "Kachna je bohužel zavřena <:sadcat:576171980118687754>"
-    kachna_switched = "Kachna byla nastavena na: {open_closed}"
+
+    kachna_grillbot = "O Kachnu se teď stará Grillbot " \
+                      "<:feelsWowMan:493152294712377354> Použij $kachna."
+
     karma = "{user} Karma uzivatele `{target}` je: **{karma}** " \
             "(**{order}.**)\nA rozdal:\n" \
             "**{karma_pos}** pozitivní karmy " \
@@ -78,9 +78,11 @@ class Messages:
                                "ne {input}] [user(s)]` "
     karma_give_success = "Karma byla úspěšně přidaná."
     karma_give_negative_success = "Karma byla úspěšně odebraná."
-    karma_message_format = "?karma message [url, id]"
+    karma_message_format = prefix + "karma message [url, id]"
     member_not_found = "{user} Nikoho takového jsem nenašel."
     karma_lederboard_offser_error = "{user} Špatný offset, zadej kladné číslo"
+    karma_web_title = "Celý leaderboard"
+    karma_web = "https://karma.grillbot.cloud/"
 
     role_add_denied = "{user}, na přidání role {role} nemáš právo."
     role_remove_denied = "{user}, " \
@@ -173,9 +175,8 @@ class Messages:
     vote_result_none = "V hlasování „{question}“ nikdo nehlasoval. <:sadcat:576171980118687754>"
 
     review_format = prefix + "reviews [add, remove, zkratka předmětu]"
-    review_add_format = prefix + "reviews add [zkratka předmětu] [tier (0-4, kde 0" \
-                        " je nejlepší)] (anonym) (text)"
-
+    review_add_format = prefix + "reviews add {ZkratkaPredmetu} {Tier (0-4, 0 je TOP)} (VolitelnyText)\n" \
+                        "Pro anonymní příspěvek použijte DM.\nNapříklad:\n`" + prefix +"reviews add IZP 2 text recenze`"
     review_wrong_subject = "Nesprávná zkratka předmětu"
     review_tier = "Tier je z rozsahu 0-4, kde 0 je nejlepší"
     review_text_len = "Maximální počet znaků v části 'text' je 1024"
@@ -189,6 +190,7 @@ class Messages:
     review_remove_success = "Hodnocení předmětu bylo odebráno"
     review_remove_error = "Hodnocení předmětu nebylo nalezeno"
     review_add_denied = "{user}, na přidání hodnocení předmětu nemáš právo."
+    review_not_on_server = "{user}, na použití tohto příkazu musíš být na Fitwide serveri."
     subject_format = prefix + "subject [add, remove] [zkratka předmětu]"
 
     pr_meme = "https://github.com/Toaster192/rubbergod/pulls"
@@ -199,6 +201,10 @@ class Messages:
     
     name_day_cz = "Dnes má svátek {name}"
     name_day_sk = "Dnes má meniny {name}"
+
+    repost_title = "Nápověda"
+    repost_description = "{user}, shoda **{value}**!"
+    repost_content = "Pokud obrázek je repost, dej mu ♻️.\nJestli není, klikni tady na ❎ a při {limit} takových reakcích se toho upozornění smaže."
 
     info = [[('karma', 'Vypíše vaši karmu, kolik pozitivní a negativní karmy'
                        ' jste rozdali.'),

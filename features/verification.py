@@ -136,7 +136,7 @@ class Verification(BaseFeature):
                                        user=message.author.id, admin=Config.admin_id))
         try:
             await message.delete()
-        except discord.errors.Forbidden:
+        except discord.errors.HTTPException:
             return
 
     @staticmethod
@@ -144,6 +144,9 @@ class Verification(BaseFeature):
         """Parses year string originally from /etc/passwd into a role name"""
         raw_year_parts = raw_year.split()
         year = None
+
+        if raw_year.lower() == "dropout":
+            return "Dropout"
 
         if len(raw_year_parts) == 3:
             if raw_year_parts[0] == "FIT":
@@ -160,18 +163,18 @@ class Verification(BaseFeature):
                                            "NGRI", "NNET", "NVIZ", "NCPS",
                                            "NSEC", "NEMB", "NHPC", "NISD",
                                            "NIDE", "NISY", "NMAL", "NMAT",
-                                           "NSEN", "NVER", "NSPE"]:
-                    year = "MIT"
+                                           "NSEN", "NVER", "NSPE", "MGH"]:
+                    year = "MIT" # MGH is also Erasmus
                     if raw_year_parts[2] < 3:
                         year = str(raw_year_parts[2]) + year
                     else:
                         year = "3MIT+"
                 elif raw_year_parts[1] in ["DVI4", "DRH"]:
                     year = "PhD+"
-                elif raw_year_parts[1] == "BCH":
-                    year = "Erasmus"
+                elif raw_year_parts[1] in ["BCH", "CZV"]:
+                    year = "1BIT" # TODO: fix erasmus students (BCH)
         elif raw_year_parts[0] == "FEKT":
-            year = "FEKT"
+            year = "VUT"
         elif len(raw_year_parts) == 1:
             if raw_year_parts[0] == "MUNI":
                 year = "MUNI"
@@ -264,8 +267,8 @@ class Verification(BaseFeature):
 
                 self.repo.save_verified(login, message.author.id)
 
-                await message.channel.send(utils.fill_message("verify_verify_success",
-                                           user=message.author.id))
+                await member.send(utils.fill_message("verify_verify_success",
+                                                     user=message.author.id))
 
                 await member.send(Messages.verify_post_verify_info)
 
@@ -284,7 +287,7 @@ class Verification(BaseFeature):
                 channel = self.bot.get_channel(Config.log_channel)
                 await channel.send(embed=embed)
         else:
-            await message.channel.send(utils.fill_message("verify_verify_already_verified",
+            await message.channel.send(utils.fill_message("verify_already_verified",
                                        user=message.author.id, admin=Config.admin_id))
 
         try:

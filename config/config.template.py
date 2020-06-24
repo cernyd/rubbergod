@@ -1,6 +1,7 @@
 class Config:
     key = ''
     verification_role = ''
+    verification_role_id = 591349196267716608
     admin_id = 0  # for mention in case of false verification
     guild_id = 0
 
@@ -17,10 +18,11 @@ class Config:
     # Base bot behavior
     command_prefix = ('?', '!')
     default_prefix = '?'
+    ignored_prefixes = ('!')
 
     # Extensions loaded on bot start
     extensions = ['base', 'karma', 'meme', 'random', 'verify', 'fitwide',
-                  'acl', 'review', 'vote', 'kachna', 'name_day']
+                  'acl', 'review', 'vote', 'kachna', 'name_day', "week", "weather"]
 
     # Roll dice
     max_dice_at_once = 1000
@@ -39,6 +41,8 @@ class Config:
 
     # Pin emoji count to pin
     pin_count = 20
+    #                       skolni-info          server-info
+    pin_banned_channels = [491277786489683979, 489461089432633346]
 
     # Special channel IDs
     log_channel = 531058805233156096
@@ -112,7 +116,11 @@ class Config:
         "zzn", "jad", "jad", "izsl", "zpo", "zpoe", "zpd", "zpja", "asd",
         "zre", "zree"
     ]
-    reviews_forbidden_roles = ["MUNI", "Host"]
+    #                            MUNI                Host
+    reviews_forbidden_roles = [600047283509264384, 603673568051462144]
+
+    # How many people to print if the limit argument is not specified
+    rolehoarder_default_limit = 10
 
     # Arcas
     arcas_id = 140547421733126145
@@ -133,3 +141,18 @@ class Config:
     # name day source url
     name_day_url_cz = "http://svatky.adresa.info/json"
     name_day_url_sk = "http://svatky.adresa.info/json?lang=sk"
+
+    # weather token to openweather API
+    weather_token = "678a5932f6dd92ac668b20e9f89c0318"
+
+    # Warphole config
+    warphole_blue = 0
+    warphole_orange = 0
+
+    # warden
+    duplicate_limit = 5
+    #                           #memes              #aww
+    deduplication_channels = [461548323116154880, 543083844736253964]
+
+    # week command
+    starting_week = 5

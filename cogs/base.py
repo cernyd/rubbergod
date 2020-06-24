@@ -31,27 +31,36 @@ class Base(commands.Cog):
         # The local handlers so far only catch bad arguments so we still
         # want to print the rest
         if (isinstance(error, commands.BadArgument) or
-            isinstance(error, commands.errors.CheckFailure)) and\
+            isinstance(error, commands.errors.CheckFailure) or
+            isinstance(error, commands.errors.MissingAnyRole) or
+            isinstance(error, commands.errors.MissingRequiredArgument)) and\
            hasattr(ctx.command, 'on_error'):
             return
 
+        if isinstance(error, commands.UserInputError):
+            await ctx.send("Chyba v inputu")
+            return
+
         if isinstance(error, commands.CommandNotFound):
-            if not ctx.message.content.startswith('!'):
+            prefix = ctx.message.content[:1]
+            if prefix not in config.ignored_prefixes:
                 await ctx.send(messages.no_such_command)
             return
-        elif isinstance(error, commands.CommandOnCooldown):
+
+        if isinstance(error, commands.CommandOnCooldown):
             await ctx.send(utils.fill_message("spamming", user=ctx.author.id))
-        else:
-            output = 'Ignoring exception in command {}:\n'.format(ctx.command)
-            output += ''.join(traceback.format_exception(type(error),
-                                                         error,
-                                                         error.__traceback__))
-            channel = self.bot.get_channel(config.bot_dev_channel)
-            print(output)
-            output = list(output[0 + i: 1900 + i] for i in range(0, len(output), 1900))
-            if channel is not None:
-                for message in output:
-                    await channel.send("```\n" + message + "\n```")
+            return
+
+        output = 'Ignoring exception in command {}:\n'.format(ctx.command)
+        output += ''.join(traceback.format_exception(type(error),
+                                                     error,
+                                                     error.__traceback__))
+        channel = self.bot.get_channel(config.bot_dev_channel)
+        print(output)
+        output = list(output[0 + i: 1900 + i] for i in range(0, len(output), 1900))
+        if channel is not None:
+            for message in output:
+                await channel.send("```\n" + message + "\n```")
 
     @commands.cooldown(rate=2, per=20.0, type=commands.BucketType.user)
     @commands.command()
@@ -60,13 +69,10 @@ class Base(commands.Cog):
         delta = now - boottime
         await ctx.send(utils.fill_message("uptime_message", boottime=str(boottime), uptime=str(delta)))
 
-    @commands.cooldown(rate=2, per=20.0, type=commands.BucketType.user)
-    @commands.command()
-    async def week(self, ctx):
-        await ctx.send(rng.week())
+    
 
     @commands.cooldown(rate=2, per=60.0, type=commands.BucketType.user)
-    @commands.command()
+    @commands.command(aliases=['help'])
     async def god(self, ctx):
         embed = self.reaction.make_embed(1)
 
